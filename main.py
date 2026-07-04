@@ -1,28 +1,71 @@
-# Choose ONE provider by importing it:
+from hf import generate_response
 
-#Change groq --> hf to use hugging face API
-#Change hf --> groq to use groq API
-from groq import generate_response
+import time
 
-def prompt_engineering_activity():
-    print("Welcome to the Prompt Engineering Tutorial")
+def temperature_prompt_activity():
+    print("=" * 70)
+    print("ADVANCED PROMPT ENGINEERING: TEMPERATURE + INSTRUCTIONS")
+    print("=" * 70)
+    
+    #Temperature
+    print("\nPART 1: TEMPERATURE EXPLORATION")
+    base = input("Enter a creative prompt: ").strip()
 
-    vague = input("Enter a vague prompt:")
-    print("\nAi's response to a vague prompt")
-    print(generate_response(vague))
+    for t, label in [(0.1, "LOW (0.1) - Deterministic"),
+                     (0.5, "MEDIUM (0.5) - BALANCED"),
+                     (0.9, "HIGH (0.9) - CREATIVE")]:
+        print(f"\n--- {label} ---")
+        print(generate_response(base, temperature=t, max_tokens=512))
+        time.sleep(1)
+    
+    #Instruction based prompts
+    print("\n PART 2: INSTRUCTION-BASED PROMPTS")
+    topic = input("Please choose a topic (e.g. climate change, space exploration): ").strip()
+    prompts = [
+        f"Summarise key facts about {topic} in  3-4 sentences.",
+        f"Explain {topic} as if I'm a 10-year-old child",
+        f"Write a pro/con list about {topic}"
+        f"Create a fictional news headline from 2050 about {topic}"]    
 
-    specific = input("Now make it more specific:")
-    print("\nAi's response to a specific prompt")
-    print(generate_response(specific))
+    for i, p in enumerate(prompts, 1):
+        print(f"\n--- INSTRUCTION {i} ----\n{p}")
+        print(generate_response(p, temperature=0.7, max_tokens= 512))
+        time.sleep(1)
 
-    context = input("Now add context to your specific prompt: ")
-    print("\nAi's response to contextual prompt")
-    print(generate_response(context))
+    print("\nPART 3: YOUR OWN INSTRUCTION PROMPT")
+    custom = input("Enter your instruction-based prompt: ").strip()
+    try:
+        temp = float(input("Set temperature (0.1 to 1.0): ").strip())
+        if not (0.1 <= temp <= 1.0): raise ValueError
+    except ValueError:
+        print("Invalid temperature. Using 0.7.")
+        temp = 0.7
 
-    print("\n-----Reflection-----")
-    print("1. How did the AI's response change when the prompt was made more specific?")
-    print("2. How did the AI's response improve with the added context?")
-    print("3. Which prompt produced the most relevant and tailored response? Why?")
+    print(f"\n-- YOUR PROMPT @ TEMP {temp} ---")
+    print(generate_response(custom, temperature=temp, max_tokens=512))
 
+    print("\nREFLECTION: ")
+    print("1) What changed when prompts became more specific?")
+    print("2) What improved when context was added?")
+    print("3) Which prompt felt most useful and why?")
+    print("\nCHALLENGE: Create a prompt chain:")
+    print("Generate content -> rewrite with constraints -> create a sequel (try different temps.)")
+
+def pseudo_stream(text, delay=0.013):
+        for ch in text:
+            print(ch, end= "", flush=True)
+            time.sleep(delay)
+        print()
+    
+def bonus_stream():
+        choice= input("\nBONUS: streaming like output? (y/n):").lower().strip()
+        if choice == "y":
+            p = input("Enter a prompt: ").strip()
+            out = generate_response(p, temperature=0.7, max_tokens=512)
+            print("\nStreaming like response (not real streaming):")
+            pseudo_stream(out)
+
+        
 if __name__ == "__main__":
-    prompt_engineering_activity()
+    temperature_prompt_activity()   
+    bonus_stream()
