@@ -1,85 +1,51 @@
-from hf import generate_response  
-import time
+from hf import generate_response      # Can switch from hf to qroq
+
+def run_activity():
+    print("ZERO-SHOT, ONE-SHOT & FEW-SHOT LEARNING ACTIVITY")
+
+    # Collecing user entries
+    category = input("Enter a category (e.g., animal, food, city): ").strip()
+    item = input(f"Enter a specific {category} to classify: ").strip()
+
+    # Checking for fill
+    if not category or not item:
+        print("Please fill in both fields to run the activity.")
+        return
+
+    zero_shot = f"Is {item} a {category}? Answer yes or no."
+    print("\n--- ZERO-SHOT LEARNING ---")
+    print(f"Response: {generate_response(zero_shot, temperature=0.3, max_tokens=1024)}")  # Lower temp for less creative answers
+
+    one_shot = f"""Example: Category: fruit Item: apple Answer: Yes, apple is a fruit.
+Now you try:
+Category: {category}
+Item: {item}
+Answer:"""
+    print("\n--- ONE-SHOT LEARNING ---")
+    print(f"Response: {generate_response(one_shot, temperature=0.3, max_tokens=1024)}")
 
 
-def temperature_prompt_activity():
-    print("=" * 70)
-    print("ADVANCED PROMPT ENGINEERING: TEMPERATURE + INSTRUCTIONS")
-    print("=" * 70)
+    few_shot = f"""Example 1: Category: fruit Item: apple Answer: Yes, apple is a fruit.
+Now you try:
+Category: {category}
+Item: {item}
+Answer:"""
+    print("\n--- FEW-SHOT LEARNING ---")
+    print(f"Response: {generate_response(few_shot, temperature=0.3, max_tokens=1024)}") # Higher temp for more creativity 
 
-    print("\nPART 1: TEMPERATURE EXPLORATION")
-    base = input("Enter a creative prompt: ").strip()
+    creative_prompt = f"""Write a one-sentence story about the given word.
+Example 1:
+Word: moon
+Story: The moon winked at the lovers as they shared their first kiss.
+Word: {item}
+Story:"""
+    print("\n--- CREATIVE FEW-SHOT EXAMPLE ---")
+    print(f"Response: {generate_response(creative_prompt, temperature=0.7, max_tokens=1024)}")
 
-    # Smaller list so easier readability
-    temperature_settings = [
-        (0.1, "LOW (0.1) - Deterministic"),
-        (0.5, "MEDIUM (0.5) - BALANCED"),
-        (0.9, "HIGH (0.9) - CREATIVE"),
-    ]
-
-    for t, label in temperature_settings:
-        print(f"\n--- {label} ---")
-        print(generate_response(base, temperature=t, max_tokens=512))
-        time.sleep(1)
-
-    # Instruction based prompts
-    print("\nPART 2: INSTRUCTION-BASED PROMPTS")
-    topic = input("Please choose a topic (e.g. climate change, space exploration): ").strip()
-
-    prompts = [
-        f"Summarise key facts about {topic} in 3-4 sentences.",
-        f"Explain {topic} as if I'm a 10-year-old child",
-        f"Write a pro/con list about {topic}",  
-        f"Create a fictional news headline from 2050 about {topic}",
-    ]
-
-    for i, p in enumerate(prompts, 1):
-        print(f"\n--- INSTRUCTION {i} ----\n{p}")
-        print(generate_response(p, temperature=0.7, max_tokens=512))
-        time.sleep(1)
-
-    print("\nPART 3: YOUR OWN INSTRUCTION PROMPT")
-    custom = input("Enter your instruction-based prompt: ").strip()
-
-    try:
-        temp = float(input("Set temperature (0.1 to 1.0): ").strip())
-        if not (0.1 <= temp <= 1.0):
-            raise ValueError
-    except ValueError:
-        print("Invalid temperature. Using 0.7.")
-        temp = 0.7  #Temperature for except block
-
-    print(f"\n-- YOUR PROMPT @ TEMP {temp} ---")
-    print(generate_response(custom, temperature=temp, max_tokens=512))
-
-    print("\nREFLECTION: ")
-    print("1) What changed when prompts became more specific?")
-    print("2) What improved when context was added?")
-    print("3) Which prompt felt most useful and why?")
-
-    print("\nCHALLENGE: Create a prompt chain:")
-    print("Generate content -> rewrite with constraints -> create a sequel (try different temps.)")
-
-
-def pseudo_stream(text, delay=0.013):
-    """Print text character-by-character to simulate streaming output."""
-    for ch in text:
-        print(ch, end="", flush=True)  
-        time.sleep(delay)
-    print()  
-
-
-def bonus_stream():
-    choice = input("\nBONUS: streaming like output? (y/n):").lower().strip()
-    if choice == "y":
-        p = input("Enter a prompt: ").strip()
-        out = generate_response(p, temperature=0.7, max_tokens=512)
-        print("\nStreaming like response (not real streaming):")
-        pseudo_stream(out)
-    else:
-        print("Skipping bonus streaming.")
-
+    print("\n--- REFLECTION QUESTIONS ---")
+    print("1. How did the responses differ between zero-shot, one-shot, and few-shot?")
+    print("2. Which approach gave the most helpful response?")
+    print("3. How did the examples influence the model's output?")
 
 if __name__ == "__main__":
-    temperature_prompt_activity()
-    bonus_stream()
+    run_activity()
