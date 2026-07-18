@@ -1,51 +1,77 @@
-from hf import generate_response      # Can switch from hf to qroq
+from hf import generate_response
+
+def get_essay_details():
+    print("\n --- AI WRITING ASSISTANT")
+    topic = input("What is the topic for your essay? ").strip()
+    essay_type = input("What type of essay are you writing?").strip()
+    lengths = ["300 words", "900 words", "1200 words", "2000 words"]
+    print("Select essay word count:")
+    for i, l in enumerate(lengths, 1): print(f"{i}, {l}")
+    try:
+        idx = int(input("> ").strip())
+        length = lengths[idx - 1] if 1 <= idx <= len(lengths) else "300 words"
+    
+    except ValueError:
+        length = "300 words"
+    target_audience = input("Target audience (e.g., High School)").strip()
+    return {"topic": topic, "essay_type": essay_type, "length": length, "target_audience": target_audience}
+
+def generate_essay_content(details):
+    try:
+         temp = float(input("Enter temperature (0.1 structured, 0.7 creative): "))
+         if not (0.0 <= temp <= 1.0): raise ValueError
+    except ValueError:
+        print("Invalid temperature. Using 0.3.")
+        temp = 0.3
+
+    intro_p = f"Write an introduction for an {details['essay_type']} essay about {details['topic']} on the topic of {details['length']}."
+    intro = generate_response(intro_p, temperature=temp, max_tokens= 1024)
+    print("\n --- Generated Introduction ---\n")
+    print(intro)
+
+    print("\nWould you like the body written as a full draft or step-by-step?")
+    print("1) Full Draft\n2) Step-By-Step")
+    choice = input("> ").strip()
+
+    if choice == "1":
+        body_p = f"Write a full body for an essay on {details['topic']} with the stance of {details['target_audience']}."
+        body = generate_response(body_p, temperature=temp, max_tokens=1024)
+        print("\n --- Generated Full Body ---\n")
+        print(body)
+    else:
+        step_p = f"Write step-by-step argument for an essay on {details['topic']}. Provide evidence and reasoning."
+        body_step = generate_response(step_p, temperature=temp, max_tokens=1024)
+        print("\n --- Generated Step-By-Step Body ---\n")
+        print(body_step)
+
+    conc_p = f"Write a conclusion for an {details['essay_type']} essay about {details['topic']} with the stance of {details['target_audience']}."
+    conc = generate_response(conc_p, temperature=temp, max_tokens=1024)
+    print("\n --- Generated Conclusion ---\n")
+    print(conc)
+
+def feedback_and_refinement():
+    try: 
+        rating = int(input("\nRate Satisfaction (1-5): ").strip())
+        if rating < 1 or rating > 5: raise ValueError
+    except ValueError:
+        print("Invalid Rating. Using 3")
+        rating = 3
+
+    if rating != 5:
+        feedback = input("Provide feedback (tone, structure, etc.): ").strip()
+        print(f"\nThank you for your feedback: {feedback}")
+    else: 
+        print("\nThank you! The essay looks good.")
+
 
 def run_activity():
-    print("ZERO-SHOT, ONE-SHOT & FEW-SHOT LEARNING ACTIVITY")
-
-    # Collecing user entries
-    category = input("Enter a category (e.g., animal, food, city): ").strip()
-    item = input(f"Enter a specific {category} to classify: ").strip()
-
-    # Checking for fill
-    if not category or not item:
-        print("Please fill in both fields to run the activity.")
+    print("Welcome to the AI Writing Assistant!")
+    details = get_essay_details()
+    if not details["topic"] or not details["essay_type"]:
+        print("Please provide at least a topic and essay type to continue.")
         return
-
-    zero_shot = f"Is {item} a {category}? Answer yes or no."
-    print("\n--- ZERO-SHOT LEARNING ---")
-    print(f"Response: {generate_response(zero_shot, temperature=0.3, max_tokens=1024)}")  # Lower temp for less creative answers
-
-    one_shot = f"""Example: Category: fruit Item: apple Answer: Yes, apple is a fruit.
-Now you try:
-Category: {category}
-Item: {item}
-Answer:"""
-    print("\n--- ONE-SHOT LEARNING ---")
-    print(f"Response: {generate_response(one_shot, temperature=0.3, max_tokens=1024)}")
-
-
-    few_shot = f"""Example 1: Category: fruit Item: apple Answer: Yes, apple is a fruit.
-Now you try:
-Category: {category}
-Item: {item}
-Answer:"""
-    print("\n--- FEW-SHOT LEARNING ---")
-    print(f"Response: {generate_response(few_shot, temperature=0.3, max_tokens=1024)}") # Higher temp for more creativity 
-
-    creative_prompt = f"""Write a one-sentence story about the given word.
-Example 1:
-Word: moon
-Story: The moon winked at the lovers as they shared their first kiss.
-Word: {item}
-Story:"""
-    print("\n--- CREATIVE FEW-SHOT EXAMPLE ---")
-    print(f"Response: {generate_response(creative_prompt, temperature=0.7, max_tokens=1024)}")
-
-    print("\n--- REFLECTION QUESTIONS ---")
-    print("1. How did the responses differ between zero-shot, one-shot, and few-shot?")
-    print("2. Which approach gave the most helpful response?")
-    print("3. How did the examples influence the model's output?")
+    generate_essay_content(details)
+    feedback_and_refinement()
 
 if __name__ == "__main__":
-    run_activity()
+    run_activity()    
