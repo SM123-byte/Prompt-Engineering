@@ -1,69 +1,58 @@
 from hf import generate_response
 
-def reinforcement_learning_activity():
-    print("\n--- REINFORCEMENT LEARNING ACTIVITY ---")  
+def bias_mitigation_activity():
+    print("\n-- Bias Mitigation Activity --")
 
-    prompt = input("Enter a prompt for the AI Model (e.g. 'Describe the lion'): ").strip()
+    prompt = input("Enter a prompt to explore bias (e.g. 'Describe the ideal doctor'): ").strip() # Added to minimise white space for AI
     if not prompt:
         print("Please enter a prompt to run the activity.")
-        return # Added return earlier
-
+        return  # Placed return earlier
+    
     initial_response = generate_response(prompt, temperature=0.3, max_tokens=1024)
     print(f"\nInitial AI Response: {initial_response}")
 
-    try:
-        rating_input = input("Rate the response from 1 (bad) to 5 (good): ").strip()  # Separate variable for clarity
-        rating = int(rating_input)
-        if rating < 1 or rating > 5:
-            print("Invalid rating. Using 3.")  
-            rating = 3 
-    except ValueError:
-        print("Invalid rating. Using 3.") # Both for ValueError or out of bound number
-        rating = 3
+    modified_prompt = input(
+        "Modify the prompt to make it more neutral (e.g. 'Describe the qualities of a doctor'): ").strip() 
+    
+    if modified_prompt:
+        modified_response = generate_response(modified_prompt, temperature=0.3, max_tokens=1024)
+        print(f"\nModified AI Response (Neutral): {modified_response}")
+    else:
+        print("No modified prompt entered. Skipping neutral response.")  # Gave a more clear message when skipping
 
-    feedback = input("Provide feedback for improvement: ").strip()
+def token_limit_activity():
+    print("\n-- Token Limit Activity --")
 
-    improved_response = f"{initial_response} (Improved with your feedback: {feedback})"
-    print(f"\nImproved AI Response: {improved_response}")
+    long_prompt = input(
+        "Enter a long prompt (more than 300 words, e.g. a detailed story or description): ").strip()
+    
+    if long_prompt:
+        long_response = generate_response(long_prompt, temperature=0.3, max_tokens=1024)
+        preview = (long_response[:500] + "...") if len(long_response) > 500 else long_response
+        print(f"\nResponse to Long Prompt: {preview}")
+    else:
+        print("No long prompt entered. Skipping long prompt response.")
 
-    print("\nReflection:")
-    print("1. How did the model's response improve with feedback?")
-    print("2. How does reinforcement learning help AI to improve its performance over time?")
+    short_prompt = input("Now, condense the prompt to be more concise: ").strip()
 
-def role_based_prompt_activity():
-    print("\n--- ROLE-BASED PROMPT ACTIVITY ---") 
-
-    category = input("Enter a category (e.g., science, history, math): ").strip()
-    item = input(f"Enter a specific {category} topic (e.g. 'photosynthesis' for science): ").strip()
-
-    if not category or not item:
-        print("Please fill in both fields to run the activity.")
-        return # Added return earlier like previous section
-
-    teacher_prompt = f"You are a teacher. Explain {item} in simple terms."
-    expert_prompt = f"You are an expert in {category}. Explain {item} in a detailed, technical manner."
-
-    teacher_response = generate_response(teacher_prompt, temperature=0.3, max_tokens=1024)
-    expert_response = generate_response(expert_prompt, temperature=0.3, max_tokens=1024)
-
-    print(f"\n---- Teacher's Perspective ----\n{teacher_response}")
-    print(f"\n---- Expert's Perspective ----\n{expert_response}")
-
-    print("\nReflection:")
-    print("1. How did the AI's response differ between the teacher's and expert's perspectives?")
-    print("2. How can role-based prompts help tailor AI responses for different contexts?")
+    if short_prompt:
+        short_response = generate_response(short_prompt, temperature=0.3, max_tokens=1024)
+        print(f"\nResponse to Condensed Prompt: {short_response}")
+    else:
+        print("No condensed prompt entered. Skipping condensed prompt response.") # Same here changed the message to be clearer
 
 def run_activity():
-    print("\n---- AI Learning Activity ----") 
+    print("\n-- AI Learning Activity --")
     print("Choose an activity:")
-    print("1) Reinforcement Learning")
-    print("2) Role-Based Prompts")
+    print("1) Bias Mitigation")
+    print("2) Token Limits")
 
-    choice = input("> ").strip() 
+    choice = input("> ").strip()
+
     if choice == "1":
-        reinforcement_learning_activity()
+        bias_mitigation_activity()
     elif choice == "2":
-        role_based_prompt_activity()
+        token_limit_activity()
     else:
         print("Invalid choice. Please choose 1 or 2.") 
 
