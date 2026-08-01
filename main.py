@@ -1,60 +1,101 @@
 from hf import generate_response
 
-def bias_mitigation_activity():
-    print("\n-- Bias Mitigation Activity --")
+def get_essay_details():
+    print("\n--- AI WRITING ASSISTANT ---")
+    topic = input("What is the topic for your essay? ").strip()
+    essay_type = input("What type of essay are you writing? ").strip()
 
-    prompt = input("Enter a prompt to explore bias (e.g. 'Describe the ideal doctor'): ").strip() # Added to minimise white space for AI
-    if not prompt:
-        print("Please enter a prompt to run the activity.")
-        return  # Placed return earlier
-    
-    initial_response = generate_response(prompt, temperature=0.3, max_tokens=1024)
-    print(f"\nInitial AI Response: {initial_response}")
+    lengths = ["300 words", "900 words", "1200 words", "2000 words"]
+    print("Select essay word count:")
+    for i, l in enumerate(lengths, 1):
+        print(f"{i}. {l}")
+# Added exception handling for length of word
+    try:
+        idx = int(input("> ").strip())
+        length = lengths[idx - 1] if 1 <= idx <= len(lengths) else "300 words"
+    except ValueError:
+        length = "300 words"
 
-    modified_prompt = input(
-        "Modify the prompt to make it more neutral (e.g. 'Describe the qualities of a doctor'): ").strip() 
-    
-    if modified_prompt:
-        modified_response = generate_response(modified_prompt, temperature=0.3, max_tokens=1024)
-        print(f"\nModified AI Response (Neutral): {modified_response}")
-    else:
-        print("No modified prompt entered. Skipping neutral response.")  # Gave a more clear message when skipping
+    target_audience = input("Target audience (e.g., High School): ").strip()
+    return {
+        "topic": topic,
+        "essay_type": essay_type,
+        "length": length,
+        "target_audience": target_audience,
+    }
 
-def token_limit_activity():
-    print("\n-- Token Limit Activity --")
+def generate_essay_content(details):
+    try:
+        temp = float(input("Enter temperature (0.1 structured, 0.7 creative): "))
+        if not (0.0 <= temp <= 1.0):
+            raise ValueError
+    except ValueError:
+        print("Invalid temperature. Using 0.3.")
+        temp = 0.3
 
-    long_prompt = input(
-        "Enter a long prompt (more than 300 words, e.g. a detailed story or description): ").strip()
-    
-    if long_prompt:
-        long_response = generate_response(long_prompt, temperature=0.3, max_tokens=1024)
-        preview = (long_response[:500] + "...") if len(long_response) > 500 else long_response
-        print(f"\nResponse to Long Prompt: {preview}")
-    else:
-        print("No long prompt entered. Skipping long prompt response.")
+    intro_p = (
+        f"Write an introduction for an {details['essay_type']} essay "
+        f"about {details['topic']} with a target length of {details['length']}."
+    )
 
-    short_prompt = input("Now, condense the prompt to be more concise: ").strip()
+    intro = generate_response(intro_p, temperature=temp, max_tokens=1024)
+    print("\n--- Generated Introduction ---\n")
+    print(intro)
 
-    if short_prompt:
-        short_response = generate_response(short_prompt, temperature=0.3, max_tokens=1024)
-        print(f"\nResponse to Condensed Prompt: {short_response}")
-    else:
-        print("No condensed prompt entered. Skipping condensed prompt response.") # Same here changed the message to be clearer
-
-def run_activity():
-    print("\n-- AI Learning Activity --")
-    print("Choose an activity:")
-    print("1) Bias Mitigation")
-    print("2) Token Limits")
-
+    print("\nWould you like the body written as a full draft or step-by-step?")
+    print("1) Full Draft\n2) Step-By-Step")
     choice = input("> ").strip()
 
     if choice == "1":
-        bias_mitigation_activity()
-    elif choice == "2":
-        token_limit_activity()
+        body_p = (
+            f"Write a full body for an essay on {details['topic']} "
+            f"tailored to {details['target_audience']}." # Made changes to output print - easier to understand
+        )
+        body = generate_response(body_p, temperature=temp, max_tokens=1024)
+        print("\n--- Generated Full Body ---\n")
+        print(body)
     else:
-        print("Invalid choice. Please choose 1 or 2.") 
+        step_p = (
+            f"Write a step-by-step argument for an essay on {details['topic']}. "
+            "Provide evidence and reasoning."
+        )
+        body_step = generate_response(step_p, temperature=temp, max_tokens=1024)
+        print("\n--- Generated Step-By-Step Body ---\n")
+        print(body_step)
+
+    conc_p = (
+        f"Write a conclusion for an {details['essay_type']} essay "
+        f"about {details['topic']} with the stance of {details['target_audience']}."
+    )
+    conc = generate_response(conc_p, temperature=temp, max_tokens=1024)
+    print("\n--- Generated Conclusion ---\n")
+    print(conc)
+
+def feedback_and_refinement():
+    try:
+        rating = int(input("\nRate satisfaction (1–5): ").strip())
+        if rating < 1 or rating > 5:
+            raise ValueError
+    except ValueError:
+        print("Invalid rating. Using 3.")
+        rating = 3
+
+    if rating != 5:
+        feedback = input("Provide feedback (tone, structure, etc.): ").strip()
+        print(f"\nThank you for your feedback: {feedback}")
+    else:
+        print("\nThank you! The essay looks good.")
+
+def run_activity():
+    print("Welcome to the AI Writing Assistant!")
+    details = get_essay_details()
+
+    if not details["topic"] or not details["essay_type"]:
+        print("Please provide at least a topic and essay type to continue.")
+        return
+
+    generate_essay_content(details)
+    feedback_and_refinement()
 
 if __name__ == "__main__":
     run_activity()
