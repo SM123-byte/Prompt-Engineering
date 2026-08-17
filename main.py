@@ -1,101 +1,93 @@
-from hf import generate_response
+import io, streamlit as st
 
-def get_essay_details():
-    print("\n--- AI WRITING ASSISTANT ---")
-    topic = input("What is the topic for your essay? ").strip()
-    essay_type = input("What type of essay are you writing? ").strip()
+SYSTEM_PROMPT = """You are a Math Mastermind. For every math problem:
+1) Show step-by-step solution
+2) Explain reasoning
+3) Give an alternate method if possible
+4) Verify the answer if possible
+5) Use proper notation
+6) Break complex problems into parts
+Format: Problem → Steps → **Final Answer** → Concepts used. Be precise and educational."""
 
-    lengths = ["300 words", "900 words", "1200 words", "2000 words"]
-    print("Select essay word count:")
-    for i, l in enumerate(lengths, 1):
-        print(f"{i}. {l}")
-# Added exception handling for length of word
-    try:
-        idx = int(input("> ").strip())
-        length = lengths[idx - 1] if 1 <= idx <= len(lengths) else "300 words"
-    except ValueError:
-        length = "300 words"
+def math_generate(problem: str, level: str, temperature: float, max_tokens: int) -> str:
+    prompt = f"{SYSTEM_PROMPT}\n\nMath Problem ({level}): {problem}"
+    return math_generate(prompt, temperature=temperature, max_tokens=max_tokens)
 
-    target_audience = input("Target audience (e.g., High School): ").strip()
-    return {
-        "topic": topic,
-        "essay_type": essay_type,
-        "length": length,
-        "target_audience": target_audience,
-    }
+def export_txt(history):
+    txt = "\n\n".join([f"Q{i}: {h['q']}\nA{i}: {h['a']}" for i, h in enumerate(history, 1)])
+    return io.BytesIO(txt.encode("utf-8"))
 
-def generate_essay_content(details):
-    try:
-        temp = float(input("Enter temperature (0.1 structured, 0.7 creative): "))
-        if not (0.0 <= temp <= 1.0):
-            raise ValueError
-    except ValueError:
-        print("Invalid temperature. Using 0.3.")
-        temp = 0.3
+def setup_ui():
+    st.set_page_config(page_title="🧮 Math Mastermind", layout="centered")
+    st.title("🧮 Math Mastermind")
+    st.write("Solve any math problem with detailed step-by-step explanations.")
 
-    intro_p = (
-        f"Write an introduction for an {details['essay_type']} essay "
-        f"about {details['topic']} with a target length of {details['length']}."
-    )
-
-    intro = generate_response(intro_p, temperature=temp, max_tokens=1024)
-    print("\n--- Generated Introduction ---\n")
-    print(intro)
-
-    print("\nWould you like the body written as a full draft or step-by-step?")
-    print("1) Full Draft\n2) Step-By-Step")
-    choice = input("> ").strip()
-
-    if choice == "1":
-        body_p = (
-            f"Write a full body for an essay on {details['topic']} "
-            f"tailored to {details['target_audience']}." # Made changes to output print - easier to understand
+    with st.expander("📌 Examples"):
+        st.markdown(
+            '- Algebra: "Solve 2x² + 5x − 3 = 0"\n'
+            '- Calculus: "Derivative of sin(x²) + ln(x)"\n'
+            '- Geometry: "Area of triangle (0,0),(3,4),(6,0)"\n'
+            '- Probability: "P(sum=7 with two dice)"'
         )
-        body = generate_response(body_p, temperature=temp, max_tokens=1024)
-        print("\n--- Generated Full Body ---\n")
-        print(body)
-    else:
-        step_p = (
-            f"Write a step-by-step argument for an essay on {details['topic']}. "
-            "Provide evidence and reasoning."
+
+    st.session_state.setdefault("history", [])
+    st.session_state.setdefault("k", 0)
+
+    c1, c2 = st.columns([1, 2])
+    if c1.button("🗑️ Clear"):
+        st.session_state.history = []
+        st.rerun()
+    if st.session_state.history:
+        c2.download_button(
+            "📄 Export",
+            export_txt(st.session_state.history),
+            "Math_Mastermind_Solutions.txt",
+            "text/plain"
         )
-        body_step = generate_response(step_p, temperature=temp, max_tokens=1024)
-        print("\n--- Generated Step-By-Step Body ---\n")
-        print(body_step)
 
-    conc_p = (
-        f"Write a conclusion for an {details['essay_type']} essay "
-        f"about {details['topic']} with the stance of {details['target_audience']}."
-    )
-    conc = generate_response(conc_p, temperature=temp, max_tokens=1024)
-    print("\n--- Generated Conclusion ---\n")
-    print(conc)
+    with st.form("math_form", clear_on_submit=True):
+        q = st.text_area(
+            "📝 Enter your math problem:",
+            height=80,
+            placeholder="Example: Solve x² + 5x + 6 = 0",
+            key=f"q_{st.session_state.k}"
+        )
+        t1, t2 = st.columns(2)
+        temperature = t1.slider("🌡️ Temperature", 0.0, 1.0, 0.1, 0.1)
+        max_tokens = t2.number_input("🔢 Max tokens", 256, 4096, 1024, 64)
 
-def feedback_and_refinement():
-    try:
-        rating = int(input("\nRate satisfaction (1–5): ").strip())
-        if rating < 1 or rating > 5:
-            raise ValueError
-    except ValueError:
-        print("Invalid rating. Using 3.")
-        rating = 3
+        a, b = st.columns([3, 1])
+        solve = a.form_submit_button("🧠 Solve", use_container_width=True)
+        level = b.selectbox("Level", ["Basic", "Intermediate", "Advanced"], index=1)
 
-    if rating != 5:
-        feedback = input("Provide feedback (tone, structure, etc.): ").strip()
-        print(f"\nThank you for your feedback: {feedback}")
-    else:
-        print("\nThank you! The essay looks good.")
+        if solve:
+            if not q.strip():
+                st.warning("⚠️ Enter a problem first.")
+            else:
+                with st.spinner("Solving..."):
+                    ans = math_generate(q.strip(), level, temperature, max_tokens)
+                    st.session_state.history.insert(0, {"q": q.strip(), "a": ans, "lvl": level})
+                    st.session_state.k += 1
+                    st.rerun()
 
-def run_activity():
-    print("Welcome to the AI Writing Assistant!")
-    details = get_essay_details()
-
-    if not details["topic"] or not details["essay_type"]:
-        print("Please provide at least a topic and essay type to continue.")
+    if not st.session_state.history:
         return
 
-    generate_essay_content(details)
-    feedback_and_refinement()
+    st.markdown("### 🧾 Solution History (Latest First)")
+    st.markdown(
+        """<style>
+        .box{max-height:500px;overflow-y:auto;border:2px solid #4CAF50;padding:12px;background:#f7fbff;border-radius:10px}
+        .q{font-weight:700;color:#2E7D32;margin-top:12px}
+        .lvl{display:inline-block;background:#FF9800;color:#fff;padding:2px 8px;border-radius:12px;font-size:12px;margin-left:8px}
+        .a{white-space:pre-wrap;color:#1B5E20;background:#fff;padding:10px;border-radius:8px;border-left:4px solid #4CAF50;margin:6px 0 14px}
+        </style>""",
+        unsafe_allow_html=True
+    )
+    html = '<div class="box">'
+    for i, h in enumerate(st.session_state.history, 1):
+        html += f'<div class="q">Q{i}: {h["q"]}<span class="lvl">{h["lvl"]}</span></div>'
+        html += f'<div class="a">{h["a"]}</div>'
+    st.markdown(html + "</div>", unsafe_allow_html=True)
 
 if __name__ == "__main__":
-    run_activity()
+    setup_ui()
